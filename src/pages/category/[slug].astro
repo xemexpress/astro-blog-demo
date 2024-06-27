@@ -1,0 +1,35 @@
+---
+import type { GetStaticPaths } from "astro";
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import Main from "../../components/Main.astro";
+import CategoryList from "../../components/CategoryList.astro";
+import H1 from "../../components/H1.astro";
+import Pagination from "../../components/Pagination.astro";
+import PostList from "../../components/PostList.astro";
+
+export const getStaticPaths = (async () => {
+    const posts = await getCollection("posts");
+    const allCategories = posts.flatMap((post) => post.data.categories);
+    const categories = [...new Set(allCategories)];
+
+    const paths = categories.map((category) => {
+        const postsByCategory = posts.filter((post) =>
+            post.data.categories.includes(category)
+        );
+
+        return {
+            params: {
+                slug: category,
+            },
+        };
+    });
+
+    return paths;
+}) satisfies GetStaticPaths;
+
+const { slug } = Astro.params;
+
+return Astro.redirect(`/category/${slug}/1`);
+---

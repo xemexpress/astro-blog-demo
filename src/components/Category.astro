@@ -1,0 +1,14 @@
+---
+type Props = {
+    category: string;
+};
+
+const { category } = Astro.props;
+---
+
+<a
+    class="p-2 text-teal-900 rounded-3xl uppercase text-xl border-2 border-teal-900 whitespace-nowrap"
+    href=`/category/${category}/1`
+>
+    {category}
+</a>
