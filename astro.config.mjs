@@ -10,5 +10,5 @@ export default defineConfig({
         port: 3000,
     },
     integrations: [tailwind(), svelte(), sitemap()],
-    site: "https://main--peaceful-mousse-87c347.netlify.app/",
+    site: process.env.SITE_URL || "http://localhost:3000",
 });
