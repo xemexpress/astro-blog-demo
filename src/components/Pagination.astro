@@ -1,14 +1,47 @@
 ---
+import { getCollection } from "astro:content";
+
 type Props = {
-    prevURL?: string;
-    nextURL?: string;
+    page: number;
+    numberOfPosts: number;
 };
 
-const { prevURL, nextURL } = Astro.props;
+// const { prevURL, nextURL } = Astro.props;
+
+const { page, numberOfPosts } = Astro.props;
+const postsPerPage = Number(import.meta.env.POSTS_PER_PAGE);
+const hasPreviousPosts = page > 1;
+const hasNextPosts = numberOfPosts > page * postsPerPage;
 ---
 
 <div class="flex justify-between">
     {
+        hasPreviousPosts ? (
+            <a
+                href={`?page=${page - 1}`}
+                class="bg-teal-900 text-white py-3 px-6 rounded-xl text-xl"
+            >
+                Previous
+            </a>
+        ) : (
+            <div />
+        )
+    }
+
+    {
+        hasNextPosts ? (
+            <a
+                href={`?page=${page + 1}`}
+                class="bg-teal-900 text-white py-3 px-6 rounded-xl text-xl"
+            >
+                Next
+            </a>
+        ) : (
+            <div />
+        )
+    }
+
+    <!-- {
         prevURL && (
             <a
                 href={prevURL}
@@ -28,5 +61,5 @@ const { prevURL, nextURL } = Astro.props;
                 Next
             </a>
         )
-    }
+    } -->
 </div>

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://main--peaceful-mousse-87c347.netlify.app//sitemap-index.xml
+Sitemap: https://main--peaceful-mousse-87c347.netlify.app/sitemap-index.xml

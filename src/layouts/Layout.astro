@@ -1,6 +1,7 @@
 ---
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import { getThumbnail } from "../cloudinary";
 import "@fontsource/cabin";
 
 interface Props {
@@ -12,7 +13,7 @@ interface Props {
 const {
     title = "Rhythm Nation",
     description = "A community of music producers and enthusiasts",
-    image,
+    image = getThumbnail("A community of Astro developer"),
 } = Astro.props;
 ---
 

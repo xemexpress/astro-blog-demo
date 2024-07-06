@@ -1,35 +1,65 @@
 ---
-import type { GetStaticPaths } from "astro";
-import type { CollectionEntry } from "astro:content";
-import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import Main from "../../components/Main.astro";
 import H1 from "../../components/H1.astro";
 import TableOfContents from "../../components/TableOfContents.astro";
 import Share from "../../components/Share.astro";
 import { Image, getImage } from "astro:assets";
+import { getEntryBySlug } from "astro:content";
+import PostMeta from "../../components/PostMeta.astro";
+import { getThumbnail } from "../../cloudinary";
+import CommentForm from "../../components/CommentForm.astro";
+import { XataClient } from "../../xata";
+import CommentList from "../../components/CommentList.astro";
+import EmojiReactions from "../../components/EmojiReactions.svelte";
+import type { ReactionDetails } from "../../types/Emoji";
+import { getReactionDetailsByPost } from "../../utils/Emoji";
 
-export const getStaticPaths: GetStaticPaths = async () => {
-    const posts = await getCollection("posts");
+const xata = new XataClient({ apiKey: import.meta.env.XATA_API_KEY });
+const userId = Astro.cookies.get("userId");
+const { slug } = Astro.params;
 
-    return posts.map((post) => {
-        return { params: { slug: post.slug }, props: { post } };
+if (Astro.request.method === "POST") {
+    const data = await Astro.request.formData();
+    const post = data.get("post") as string;
+    const comment = data.get("comment") as string;
+
+    if (!userId?.value) {
+        return Astro.redirect("/login?redirect=/blog/${slug}#comments");
+    }
+
+    await xata.db.comments.create({
+        post: slug,
+        text: comment,
+        date: new Date(),
+        user: userId.value,
     });
-};
 
-type Props = {
-    post: CollectionEntry<"posts">;
-};
+    return Astro.redirect(`/blog/${slug}#comments`);
+}
 
-const { post } = Astro.props;
+const post = await getEntryBySlug("posts", slug as string);
+if (!post) {
+    return Astro.redirect("/404");
+}
+
+const comments = await xata.db.comments
+    .select(["id", "text", "date", "user.name"])
+    .filter({ post: post.slug })
+    .getMany();
+
+const reactionDetails: ReactionDetails = await getReactionDetailsByPost(
+    post.slug,
+    userId?.value
+);
 
 const { Content, headings } = await post.render();
-const coverImageSource = (await getImage({ src: post.data.image })).src;
+// const coverImageSource = (await getImage({ src: post.data.image })).src;
 ---
 
 <Layout
     title={post.data.title}
-    image={coverImageSource}
+    image={getThumbnail(post.data.title)}
     description={post.data.description}
 >
     <Main>
@@ -39,6 +69,7 @@ const coverImageSource = (await getImage({ src: post.data.image })).src;
 
         <H1 text={post.data.title} />
 
+        <PostMeta post={post} />
         <Image
             src={post.data.image}
             width={1024}
@@ -55,5 +86,33 @@ const coverImageSource = (await getImage({ src: post.data.image })).src;
                 <Content />
             </div>
         </div>
+        <EmojiReactions
+            client:visible
+            post={post.slug}
+            details={reactionDetails}
+        />
     </Main>
+    <div
+        class="bg-teal-100/30 px-24 py-14 relative border-b border-teal-900 mt-44"
+    >
+        <div class="max-w-7xl mx-auto">
+            <div id="comments" class="mb-4">
+                <h2>
+                    <span class="font-bold text-teal-900 text-4xl mr-12"
+                        >Comments</span
+                    >
+                    <span
+                        class="border border-teal-900 text-teal-900 rounded-full px-4 py-2 font-bold text-xl"
+                        >{comments.length}</span
+                    >
+                </h2>
+            </div>
+        </div>
+        <div class="mb-14">
+            <div class="mb-14">
+                <CommentForm />
+            </div>
+            <CommentList comments={comments} />
+        </div>
+    </div>
 </Layout>

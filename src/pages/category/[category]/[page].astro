@@ -9,33 +9,44 @@ import PostList from "../../../components/PostList.astro";
 import Layout from "../../../layouts/Layout.astro";
 import type { CollectionEntry } from "astro:content";
 
-export async function getStaticPaths({ paginate }: GetStaticPathsOptions) {
-    const posts = await getCollection("posts");
-    const allCategories = posts.flatMap((post) => post.data.categories);
-    const categories = [...new Set(allCategories)];
+const page = Number(Astro.url.searchParams.get("page")) || 1;
+const postsPerPage = 6;
+const start = postsPerPage * (page - 1);
+const end = start + postsPerPage;
 
-    const paths = categories.flatMap((category) => {
-        const postsByCategory = posts.filter((post) =>
-            post.data.categories.includes(category)
-        );
-        console.log("ok");
+const category = Astro.params.category as string;
+const allPosts = (await getCollection("posts")).filter((post) =>
+    post.data.categories.includes(category)
+);
+const posts = allPosts.slice(start, end);
 
-        return paginate(postsByCategory, {
-            params: { category },
-            pageSize: 2,
-        });
-    });
+// export async function getStaticPaths({ paginate }: GetStaticPathsOptions) {
+//     const posts = await getCollection("posts");
+//     const allCategories = posts.flatMap((post) => post.data.categories);
+//     const categories = [...new Set(allCategories)];
 
-    return paths;
-}
+//     const paths = categories.flatMap((category) => {
+//         const postsByCategory = posts.filter((post) =>
+//             post.data.categories.includes(category)
+//         );
+//         console.log("ok");
 
-type Props = {
-    page: Page;
-};
+//         return paginate(postsByCategory, {
+//             params: { category },
+//             pageSize: 2,
+//         });
+//     });
 
-const { page } = Astro.props;
-const posts = page.data as CollectionEntry<"posts">[];
-const { category } = Astro.params;
+//     return paths;
+// }
+
+// type Props = {
+//     page: Page;
+// };
+
+// const { page } = Astro.props;
+// const posts = page.data as CollectionEntry<"posts">[];
+// const { category } = Astro.params;
 ---
 
 <Layout
@@ -51,11 +62,17 @@ const { category } = Astro.params;
         >
         <CategoryList categories={[category]} title="Posts tagged" />
         <div class="mb-12">
-            <Pagination prevURL={page.url.prev} nextURL={page.url.next} />
+            <Pagination numberOfPosts={allPosts.length} page={page} />
         </div>
-        <PostList posts={posts} />
-        <div class="mb-36">
-            <Pagination prevURL={page.url.prev} nextURL={page.url.next} />
+        {
+            posts.length === 0 ? (
+                <p>No posts were found with that tag.</p>
+            ) : (
+                <PostList posts={posts} />
+            )
+        }
+        <div class="mb-12">
+            <Pagination numberOfPosts={allPosts.length} page={page} />
         </div>
     </Main>
 </Layout>

@@ -1,0 +1,83 @@
+---
+import H1 from "../components/H1.astro";
+import Main from "../components/Main.astro";
+import Layout from "../layouts/Layout.astro";
+import { XataClient } from "../xata";
+import bcrypt from "bcryptjs";
+
+// handle the POST request here
+
+if (Astro.request.method === "POST") {
+    const data = await Astro.request.formData();
+    const name = data.get("name") as string;
+    const email = data.get("email") as string;
+    const password = data.get("password") as string;
+
+    // handle the form submission here
+    const xata = new XataClient({ apiKey: import.meta.env.XATA_API_KEY });
+    const salt = bcrypt.genSaltSync(10);
+    const hash = bcrypt.hashSync(password, salt);
+    const user = await xata.db.users.create({ name, email, password: hash });
+
+    Astro.cookies.set("userId", user.id, {
+        httpOnly: true,
+        secure: true,
+    });
+    Astro.cookies.set("userName", user.name, {
+        httpOnly: true,
+        secure: true,
+    });
+    Astro.cookies.set("userEmail", user.email, {
+        httpOnly: true,
+        secure: true,
+    });
+
+    return Astro.redirect("/", 302);
+}
+---
+
+<Layout title="Sign Up">
+    <Main>
+        <H1 text="Sign Up" />
+
+        <form method="POST">
+            <label class="mb-2 text-teal-900" for="name">Full name</label>
+            <input
+                class="border-teal-900 border w-full mb-10 rounded-lg px-6 py-3"
+                type="text"
+                id="name"
+                name="name"
+                required
+            />
+
+            <label class="mb-2 text-teal-900" for="email">Email</label>
+            <input
+                class="border-teal-900 border w-full mb-10 rounded-lg px-6 py-3"
+                type="email"
+                id="email"
+                name="email"
+                required
+            />
+
+            <label class="mb-2 text-teal-900" for="password">Password</label>
+            <input
+                class="border-teal-900 border w-full mb-10 rounded-lg px-6 py-3"
+                type="password"
+                id="password"
+                name="password"
+                required
+            />
+
+            <button
+                class="text-white text-2xl bg-teal-900 w-full rounded-lg px-6 py-3 mb-11"
+                type="submit">Sign Up</button
+            >
+        </form>
+        <p>
+            Already have an account? <a
+                class="text-teal-900 underline"
+                href="/login">Log in</a
+            >
+        </p>
+    </Main>
+</Layout>
